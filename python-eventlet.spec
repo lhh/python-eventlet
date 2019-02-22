@@ -1,12 +1,15 @@
 %global modname eventlet
 
+%global with_doc 1
+%global with_tests 1
+
 %if 0%{?fedora} || 0%{?rhel} > 7
 %global with_python3 1
 %endif
 
 Name:           python-%{modname}
 Version:        0.24.1
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Highly concurrent networking library
 License:        MIT
 URL:            http://eventlet.net
@@ -52,6 +55,10 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python3-nose
 BuildRequires:  python3-greenlet
 BuildRequires:  python3-pyOpenSSL
+%if 0%{?with_tests}
+BuildRequires:  python3-dns
+BuildRequires:  python3-monotonic
+%endif
 Requires:       python3-dns
 Requires:       python3-greenlet
 Requires:       python3-monotonic
@@ -65,6 +72,7 @@ high programmer usability by using coroutines to make the non-blocking
 io operations appear blocking at the source code level.
 %endif
 
+%if 0%{?with_doc}
 %package -n python2-%{modname}-doc
 Summary:        Documentation for python2-%{modname}
 BuildRequires:  python2-sphinx
@@ -87,6 +95,7 @@ BuildRequires:  python3-monotonic
 %description -n python3-%{modname}-doc
 %{summary}.
 %endif
+%endif # with_doc
 
 %prep
 %autosetup -n %{modname}-%{version} -p1
@@ -101,11 +110,13 @@ sed -i "/'enum-compat',/d" setup.py
 %py3_build
 %endif
 
+%if 0%{?with_doc}
 export PYTHONPATH=$(pwd)
 sphinx-build-%{python2_version} -b html -d doctrees doc html-2
 %if 0%{?with_python3}
 sphinx-build-%{python3_version} -b html -d doctrees doc html-3
 %endif
+%endif # with_doc
 
 %install
 %py2_install
@@ -120,10 +131,12 @@ rm -rf %{buildroot}/%{python2_sitelib}/%{modname}/green/http/{cookiejar,client}.
 rm -vrf %{buildroot}%{python3_sitelib}/tests
 %endif
 
+%if 0%{?with_tests}
 %check
 %if 0%{?with_python3}
 # Tests are written only for Python 3
 nosetests-%{python3_version} -v
+%endif
 %endif
 
 %files -n python2-%{modname}
@@ -140,6 +153,7 @@ nosetests-%{python3_version} -v
 %{python3_sitelib}/%{modname}-*.egg-info/
 %endif
 
+%if 0%{?with_doc}
 %files -n python2-%{modname}-doc
 %license LICENSE
 %doc html-2
@@ -149,8 +163,13 @@ nosetests-%{python3_version} -v
 %license LICENSE
 %doc html-3
 %endif
+%endif # with_doc
 
 %changelog
+* Fri Feb 22 2019 Lon Hohberger <lon@redhat.com> - 0.24.1-4
+- Tests require dns & monotonic
+- Conditionalize tests & doc build
+
 * Tue Nov 20 2018 Alfredo Moralejo <amoralej@redhat.com> - 0.24.1-3
 - Add new dependencies dns, monotonic and six. Fixes bug #1651716
 
